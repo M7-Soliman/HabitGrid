@@ -1,0 +1,107 @@
+import SwiftUI
+import SwiftData
+import HabitCore
+
+// Pushed when a habit card is tapped: a full-year grid plus stats (current & longest
+// streak, totals). Styled to the Belora language — stat cells with mono counts.
+struct HabitDetailView: View {
+    let habit: HabitModel
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                statsRow
+                section("ACTIVITY") {
+                    ContributionGridView(grid: yearGrid, baseColor: color)
+                    legend
+                }
+            }
+            .padding(20)
+        }
+        .background(Color.appBg)
+        .navigationTitle(habit.name)
+        .navigationBarTitleDisplayMode(.large)
+    }
+
+    private var color: Color { Color(hex: habit.colorHex) }
+
+    // Four stat cells in a row: current streak, longest streak, total, this year.
+    private var statsRow: some View {
+        HStack(spacing: 10) {
+            statCell("\(Streaks.current(counts: dailyCounts))", "STREAK")
+            statCell("\(Streaks.longest(counts: dailyCounts))", "LONGEST")
+            statCell("\(habit.completions.count)", "TOTAL")
+            statCell("\(thisYearCount)", "YEAR")
+        }
+    }
+
+    private func statCell(_ value: String, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(value)
+                .font(.system(size: 20, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Color.fg1)
+            Text(label)
+                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(Color.fg4)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.appCard))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+    }
+
+    // A SectionH-style label + its content.
+    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text(title)
+                .font(.system(size: 11, weight: .medium, design: .monospaced))
+                .tracking(0.6)
+                .foregroundStyle(Color.fg4)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.appCard))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
+    }
+
+    // Less → More shading key.
+    private var legend: some View {
+        HStack(spacing: 5) {
+            Text("LESS")
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(Color.fg4)
+            ForEach(0..<5, id: \.self) { level in
+                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                    .fill(level == 0 ? Color.gridEmpty : color.opacity([0, 0.35, 0.55, 0.78, 1.0][level]))
+                    .frame(width: 10, height: 10)
+            }
+            Text("MORE")
+                .font(.system(size: 8, weight: .medium, design: .monospaced))
+                .foregroundStyle(Color.fg4)
+        }
+    }
+
+    // MARK: - Derived
+
+    private var dailyCounts: [Date: Int] {
+        let calendar = Calendar.current
+        var counts: [Date: Int] = [:]
+        for completion in habit.completions {
+            counts[calendar.startOfDay(for: completion.date), default: 0] += 1
+        }
+        return counts
+    }
+
+    // A full year (53 week-columns).
+    private var yearGrid: ContributionGrid {
+        ContributionGridBuilder.build(endingOn: Date(), weeks: 53, counts: dailyCounts)
+    }
+
+    private var thisYearCount: Int {
+        let calendar = Calendar.current
+        let year = calendar.component(.year, from: Date())
+        return habit.completions.filter { calendar.component(.year, from: $0.date) == year }.count
+    }
+}

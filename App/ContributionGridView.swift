@@ -13,7 +13,8 @@ struct ContributionGridView: View {
     private let today = Calendar.current.startOfDay(for: Date())
 
     var body: some View {
-        // A few months of columns may overflow the card, so scroll horizontally.
+        // A few months of columns may overflow the card, so scroll horizontally —
+        // anchored to the trailing edge so the most recent weeks show first.
         ScrollView(.horizontal, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 4) {
                 monthHeader
@@ -21,6 +22,7 @@ struct ContributionGridView: View {
             }
             .padding(.vertical, 2)
         }
+        .defaultScrollAnchor(.trailing)
     }
 
     // One column per week, oldest on the left; each column is 7 day-squares.

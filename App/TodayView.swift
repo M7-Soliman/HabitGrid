@@ -11,6 +11,7 @@ struct TodayView: View {
 
     @State private var showingAdd = false
     @State private var editingHabit: HabitModel?
+    @State private var selectedHabit: HabitModel?   // tapped card -> detail screen
 
     var body: some View {
         NavigationStack {
@@ -23,6 +24,9 @@ struct TodayView: View {
                 }
             }
             .background(Color.appBg)
+            .navigationDestination(item: $selectedHabit) { habit in
+                HabitDetailView(habit: habit)
+            }
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -64,6 +68,8 @@ struct TodayView: View {
         List {
             ForEach(habits) { habit in
                 HabitCardView(habit: habit)
+                    .contentShape(Rectangle())
+                    .onTapGesture { selectedHabit = habit }
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     .listRowSeparator(.hidden)
                     .listRowBackground(Color.clear)
