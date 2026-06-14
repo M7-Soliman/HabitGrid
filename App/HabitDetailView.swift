@@ -30,7 +30,7 @@ struct HabitDetailView: View {
         HStack(spacing: 10) {
             statCell("\(Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget))", "STREAK")
             statCell("\(Streaks.longest(counts: dailyCounts, metThreshold: habit.dailyTarget))", "LONGEST")
-            statCell("\(habit.completions.count)", "TOTAL")
+            statCell("\(habit.completionsList.count)", "TOTAL")
             statCell("\(consistencyPercent)%", "OVERALL")
         }
     }
@@ -98,7 +98,7 @@ struct HabitDetailView: View {
     private var dailyCounts: [Date: Int] {
         let calendar = Calendar.current
         var counts: [Date: Int] = [:]
-        for completion in habit.completions {
+        for completion in habit.completionsList {
             counts[calendar.startOfDay(for: completion.date), default: 0] += 1
         }
         return counts
@@ -112,6 +112,6 @@ struct HabitDetailView: View {
     private var thisYearCount: Int {
         let calendar = Calendar.current
         let year = calendar.component(.year, from: Date())
-        return habit.completions.filter { calendar.component(.year, from: $0.date) == year }.count
+        return habit.completionsList.filter { calendar.component(.year, from: $0.date) == year }.count
     }
 }

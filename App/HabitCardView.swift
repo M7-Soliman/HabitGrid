@@ -84,7 +84,7 @@ struct HabitCardView: View {
     private var dailyCounts: [Date: Int] {
         let calendar = Calendar.current
         var counts: [Date: Int] = [:]
-        for completion in habit.completions {
+        for completion in habit.completionsList {
             counts[calendar.startOfDay(for: completion.date), default: 0] += 1
         }
         return counts
@@ -102,7 +102,7 @@ struct HabitCardView: View {
     private var todayCount: Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        return habit.completions.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
+        return habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
     }
 
     // +1: log another occurrence today.
@@ -115,7 +115,7 @@ struct HabitCardView: View {
     private func decrement() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        if let existing = habit.completions.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
+        if let existing = habit.completionsList.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
             context.delete(existing)
             WidgetCenter.shared.reloadAllTimelines()
         }

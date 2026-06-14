@@ -1,48 +1,37 @@
-# Enabling iCloud sync (CloudKit)
+# iCloud sync (CloudKit)
 
-This makes HabitGrid sync across your devices and back up to iCloud. It **requires the paid
-Apple Developer Program ($99/yr)** — the same membership that lets the widget's App Group
-work on a real phone. Do this once you've joined.
+iCloud sync makes HabitGrid sync across your devices and back up to iCloud. It needs the
+paid **Apple Developer Program** (same membership the real-device widget needs).
 
-## 1. Capabilities (Xcode → target "HabitGrid" → Signing & Capabilities)
-- Add **iCloud** → check **CloudKit**.
-- Create/select a container: `iCloud.com.m7soliman.HabitGrid`.
-- (App Groups should already be present.)
+## What's already done in code
+- **Models are CloudKit-compatible** (`Shared/Models.swift`): no `@Attribute(.unique)`, every
+  property has a default, and the `completions` relationship is **optional** (CloudKit requires
+  to-many relationships to be optional — read it via the `completionsList` helper).
+- **The store auto-enables CloudKit** (`Shared/HabitStore.swift`): it uses the private CloudKit
+  database `iCloud.com.m7soliman.HabitGrid` whenever the device is signed into iCloud, and stays
+  local-only otherwise — so it never crashes on a device/simulator without iCloud.
+- **Entitlements** include iCloud + CloudKit on both the app and widget targets.
 
-## 2. Entitlements
-Add to `App/HabitGrid.entitlements` (and the widget's `Widget/HabitWidget.entitlements`
-if the widget should also pull from CloudKit):
+## What you do in Xcode (one-time)
+1. Open `HabitGrid.xcodeproj` → select the **HabitGrid** target → **Signing & Capabilities**.
+2. Turn on **Automatically manage signing** and pick your **Team**.
+3. Confirm the **iCloud** capability is present with **CloudKit** checked and the container
+   **`iCloud.com.m7soliman.HabitGrid`**. If it's not listed, click **+ Capability → iCloud**,
+   check CloudKit, and add that container (this registers it in your account).
+4. Repeat the **Team** selection for the **HabitWidgetExtension** target.
+5. Pick your iPhone as the run destination and **Run**. The first launch creates the CloudKit
+   schema in the **Development** environment.
 
-```xml
-<key>com.apple.developer.icloud-services</key>
-<array><string>CloudKit</string></array>
-<key>com.apple.developer.icloud-container-identifiers</key>
-<array><string>iCloud.com.m7soliman.HabitGrid</string></array>
-```
+> Tip: set your Team once in `project.yml` (`DEVELOPMENT_TEAM: <TEAMID>`) so `xcodegen generate`
+> keeps it. Find the 10-char Team ID at developer.apple.com → Membership.
 
-## 3. Model changes (CloudKit constraints) — `Shared/Models.swift`
-CloudKit-backed SwiftData has rules the current models break:
-- **Remove `@Attribute(.unique)`** from `HabitModel.id` (CloudKit disallows unique constraints).
-- **Give every non-optional stored property a default value** (CloudKit needs schema defaults).
-  e.g. `var name: String = ""`, `var colorHex: String = "#A8C5F5"`, `var dailyTarget: Int = 1`,
-  `var sortIndex: Int = 0`, `var createdAt: Date = .now`; and on `CompletionModel`:
-  `var id: UUID = UUID()`, `var date: Date = .now`.
-- Relationships are already fine (`completions` is to-many; `habit` is optional with an inverse).
+## Verify it's syncing
+- Add/edit a habit on one device → it appears on another device signed into the same iCloud.
+- Or check records in the **CloudKit Dashboard** (developer.apple.com → CloudKit).
 
-## 4. Point the store at CloudKit — `Shared/HabitStore.swift`
-```swift
-let configuration = ModelConfiguration(
-    groupContainer: .identifier(appGroupID),
-    cloudKitDatabase: .private("iCloud.com.m7soliman.HabitGrid")
-)
-```
-
-## 5. Run on a real device signed into iCloud
-- Build to your iPhone (now possible with the paid account).
-- First sync can take a moment; CloudKit creates the schema in the **Development** environment.
-- Before shipping, deploy the CloudKit schema to **Production** in the CloudKit Dashboard.
+## Before sharing it more widely
+- In the CloudKit Dashboard, **deploy the schema to Production**.
 
 ## Notes
-- The local App Group store keeps working; CloudKit mirrors it. No data migration needed for
-  a fresh install, but existing on-device data will upload on first run.
-- Keep `.unique` removed — enforce uniqueness in code if ever needed.
+- Existing local data uploads to iCloud on first sync; no manual migration needed.
+- The widget reads the same shared store, so it reflects synced data too.

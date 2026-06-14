@@ -59,7 +59,7 @@ struct HabitProvider: AppIntentTimelineProvider {
 
         let calendar = Calendar.current
         var counts: [Date: Int] = [:]
-        for completion in habit.completions {
+        for completion in habit.completionsList {
             counts[calendar.startOfDay(for: completion.date), default: 0] += 1
         }
         let grid = ContributionGridBuilder.build(endingOn: .now, weeks: weekCount, counts: counts, target: habit.dailyTarget)

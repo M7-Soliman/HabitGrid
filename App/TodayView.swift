@@ -140,7 +140,7 @@ struct TodayView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         return habits.filter { habit in
-            let todayCount = habit.completions.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
+            let todayCount = habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
             return todayCount >= max(habit.dailyTarget, 1)   // "done" = met the goal
         }.count
     }
