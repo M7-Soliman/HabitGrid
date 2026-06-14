@@ -28,3 +28,6 @@ Carthage/Build/
 
 # Claude Code — local scaffolding (skills, plan, local settings)
 .claude/
+
+# Xcode project is generated from project.yml by xcodegen — don't track it
+*.xcodeproj/

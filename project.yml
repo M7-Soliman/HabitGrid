@@ -1,0 +1,30 @@
+# xcodegen spec — defines the Xcode project so we can (re)generate it from the CLI
+# instead of hand-editing in Xcode. Run `xcodegen generate` to (re)build HabitGrid.xcodeproj.
+name: HabitGrid
+
+options:
+  bundleIdPrefix: com.m7soliman
+  deploymentTarget:
+    iOS: "17.0"          # iOS 17+ so we can use SwiftData later
+
+# Local Swift package: our pure-logic core (models + grid + streaks).
+packages:
+  HabitCore:
+    path: Packages/HabitCore
+
+targets:
+  HabitGrid:
+    type: application
+    platform: iOS
+    sources:
+      - App                # all app Swift files live in App/
+    dependencies:
+      - package: HabitCore # the app imports HabitCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.m7soliman.HabitGrid
+        GENERATE_INFOPLIST_FILE: YES        # let Xcode synthesize Info.plist
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"          # iPhone only
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
