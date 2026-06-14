@@ -7,22 +7,31 @@ import HabitCore
 struct ContributionGridView: View {
     let grid: ContributionGrid     // the laid-out weeks x days
     let baseColor: Color           // this habit's color; intensity scales its opacity
+    var scrollable: Bool = true    // off for widgets (they can't scroll)
+    var showMonthLabels: Bool = true
 
     private let cellSize: CGFloat = 11
     private let spacing: CGFloat = 3
     private let today = Calendar.current.startOfDay(for: Date())
 
     var body: some View {
-        // A few months of columns may overflow the card, so scroll horizontally —
-        // anchored to the trailing edge so the most recent weeks show first.
-        ScrollView(.horizontal, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 4) {
-                monthHeader
-                weekColumns
+        if scrollable {
+            // Overflowing columns scroll horizontally, anchored so recent weeks show first.
+            ScrollView(.horizontal, showsIndicators: false) {
+                gridStack
             }
-            .padding(.vertical, 2)
+            .defaultScrollAnchor(.trailing)
+        } else {
+            gridStack
         }
-        .defaultScrollAnchor(.trailing)
+    }
+
+    private var gridStack: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if showMonthLabels { monthHeader }
+            weekColumns
+        }
+        .padding(.vertical, 2)
     }
 
     // One column per week, oldest on the left; each column is 7 day-squares.

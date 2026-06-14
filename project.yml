@@ -17,9 +17,11 @@ targets:
     type: application
     platform: iOS
     sources:
-      - App                # all app Swift files live in App/
+      - App                # app-only Swift files
+      - Shared             # code shared with the widget (models, store, grid view, theme)
     dependencies:
       - package: HabitCore # the app imports HabitCore
+      - target: HabitWidgetExtension   # embed the widget in the app
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.m7soliman.HabitGrid
@@ -29,3 +31,23 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"          # iPhone only
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon   # use App/Assets.xcassets/AppIcon
+        CODE_SIGN_ENTITLEMENTS: App/HabitGrid.entitlements
+
+  HabitWidgetExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widget             # widget-only Swift files + Info.plist
+      - Shared             # shared models, store, grid view, theme
+    dependencies:
+      - package: HabitCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.m7soliman.HabitGrid.widget
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: Widget/Info.plist
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_ENTITLEMENTS: Widget/HabitWidget.entitlements
+        SWIFT_VERSION: "5.9"

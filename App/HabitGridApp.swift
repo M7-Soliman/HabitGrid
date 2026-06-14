@@ -8,8 +8,7 @@ struct HabitGridApp: App {
         WindowGroup {
             TodayView()
         }
-        // Spin up the on-device SwiftData store for our models. This local container
-        // is also where we'd later turn on iCloud/CloudKit sync.
-        .modelContainer(for: [HabitModel.self, CompletionModel.self])
+        // Use the shared App Group store so the widget reads the same data.
+        .modelContainer(HabitStore.container)
     }
 }
