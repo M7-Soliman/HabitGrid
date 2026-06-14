@@ -71,4 +71,4 @@ swift test --package-path Packages/HabitCore
 
 ## License
 
-MIT — see [LICENSE](LICENSE). © 2026 Mohamed Elhussiny.
+MIT — see [LICENSE](LICENSE). © 2026 Soliman M.H.
