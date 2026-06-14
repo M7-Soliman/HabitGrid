@@ -11,7 +11,7 @@ struct HabitDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 statsRow
-                section("ACTIVITY") {
+                section(habit.dailyTarget > 1 ? "ACTIVITY · GOAL \(habit.dailyTarget)×/DAY" : "ACTIVITY") {
                     ContributionGridView(grid: yearGrid, baseColor: color)
                     legend
                 }
@@ -31,8 +31,14 @@ struct HabitDetailView: View {
             statCell("\(Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget))", "STREAK")
             statCell("\(Streaks.longest(counts: dailyCounts, metThreshold: habit.dailyTarget))", "LONGEST")
             statCell("\(habit.completions.count)", "TOTAL")
-            statCell(habit.dailyTarget == 1 ? "1×" : "\(habit.dailyTarget)×", "GOAL")
+            statCell("\(consistencyPercent)%", "30-DAY")
         }
+    }
+
+    // Share of the last 30 days that met the daily goal.
+    private var consistencyPercent: Int {
+        let rate = Streaks.metRate(counts: dailyCounts, lastDays: 30, metThreshold: habit.dailyTarget)
+        return Int((rate * 100).rounded())
     }
 
     private func statCell(_ value: String, _ label: String) -> some View {

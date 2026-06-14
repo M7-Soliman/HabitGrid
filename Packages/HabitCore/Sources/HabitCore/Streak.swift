@@ -65,6 +65,28 @@ public enum Streaks {
         return longest
     }
 
+    /// The fraction (0...1) of the last `days` days (ending `asOf`) that met the goal.
+    /// E.g. metRate over 30 days = your 30-day consistency.
+    public static func metRate(
+        counts: [Date: Int],
+        lastDays days: Int,
+        asOf date: Date = Date(),
+        calendar: Calendar = .current,
+        metThreshold: Int = 1
+    ) -> Double {
+        guard days > 0 else { return 0 }
+        let goal = max(metThreshold, 1)
+        let byDay = normalize(counts, calendar: calendar)
+        let start = calendar.startOfDay(for: date)
+
+        var met = 0
+        for offset in 0..<days {
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: start) else { continue }
+            if (byDay[day] ?? 0) >= goal { met += 1 }
+        }
+        return Double(met) / Double(days)
+    }
+
     /// Collapses arbitrary-instant keys into start-of-day buckets.
     private static func normalize(_ counts: [Date: Int], calendar: Calendar) -> [Date: Int] {
         counts.reduce(into: [:]) { result, pair in

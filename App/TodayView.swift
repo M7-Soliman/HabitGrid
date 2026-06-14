@@ -7,7 +7,7 @@ import WidgetKit
 struct TodayView: View {
     @Environment(\.modelContext) private var context
 
-    @Query(sort: \HabitModel.createdAt) private var habits: [HabitModel]
+    @Query(sort: \HabitModel.sortIndex) private var habits: [HabitModel]
     @AppStorage("didSeedHabits") private var didSeed = false
 
     @State private var showingAdd = false
@@ -31,6 +31,9 @@ struct TodayView: View {
             .navigationTitle("Today")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if !habits.isEmpty { EditButton().tint(Color.brand) }   // tap to drag-reorder
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showingAdd = true } label: {
                         Image(systemName: "plus")
@@ -103,9 +106,20 @@ struct TodayView: View {
                         .tint(Color.brand)
                     }
             }
+            .onMove(perform: move)
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+    }
+
+    // Reorder: apply the drag to the array, then renumber sortIndex so it persists.
+    private func move(from source: IndexSet, to destination: Int) {
+        var ordered = habits
+        ordered.move(fromOffsets: source, toOffset: destination)
+        for (index, habit) in ordered.enumerated() {
+            habit.sortIndex = index
+        }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     private var emptyState: some View {
@@ -147,8 +161,8 @@ struct TodayView: View {
             ("Read", "#22D3EE", 1),
             ("Code", "#A78BFA", 2),
         ]
-        for (name, color, target) in samples {
-            context.insert(HabitModel(name: name, colorHex: color, dailyTarget: target))
+        for (index, (name, color, target)) in samples.enumerated() {
+            context.insert(HabitModel(name: name, colorHex: color, dailyTarget: target, sortIndex: index))
         }
         didSeed = true
     }

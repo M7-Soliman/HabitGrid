@@ -67,7 +67,9 @@ struct HabitEditorView: View {
             habit.colorHex = hex
             habit.dailyTarget = target
         } else {
-            context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target))
+            // Append new habits to the end of the manual order.
+            let count = (try? context.fetchCount(FetchDescriptor<HabitModel>())) ?? 0
+            context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target, sortIndex: count))
         }
         WidgetCenter.shared.reloadAllTimelines()
         dismiss()

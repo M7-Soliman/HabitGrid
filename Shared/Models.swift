@@ -12,17 +12,19 @@ final class HabitModel {
     var name: String
     var colorHex: String          // user-chosen color, e.g. "#39D353"
     var dailyTarget: Int          // goal count per day (1 = a plain yes/no habit)
+    var sortIndex: Int            // manual ordering in the list (lower = higher up)
     var createdAt: Date
 
     // One habit has many completions. Deleting a habit cascades to delete its completions.
     @Relationship(deleteRule: .cascade, inverse: \CompletionModel.habit)
     var completions: [CompletionModel]
 
-    init(id: UUID = UUID(), name: String, colorHex: String = "#39D353", dailyTarget: Int = 1, createdAt: Date = Date()) {
+    init(id: UUID = UUID(), name: String, colorHex: String = "#39D353", dailyTarget: Int = 1, sortIndex: Int = 0, createdAt: Date = Date()) {
         self.id = id
         self.name = name
         self.colorHex = colorHex
         self.dailyTarget = dailyTarget
+        self.sortIndex = sortIndex
         self.createdAt = createdAt
         self.completions = []
     }

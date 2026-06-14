@@ -64,4 +64,22 @@ final class StreakTests: XCTestCase {
         let counts = [day(2026, 6, 1): 2, day(2026, 6, 2): 2, day(2026, 6, 3): 1, day(2026, 6, 4): 2]
         XCTAssertEqual(Streaks.longest(counts: counts, calendar: calendar, metThreshold: 2), 2)
     }
+
+    func testMetRateOverLastDays() {
+        // Last 4 days (Jun 10–13): met on Jun 13 and Jun 11 -> 2 of 4 = 0.5.
+        let counts = [day(2026, 6, 13): 1, day(2026, 6, 11): 1]
+        XCTAssertEqual(
+            Streaks.metRate(counts: counts, lastDays: 4, asOf: day(2026, 6, 13), calendar: calendar),
+            0.5, accuracy: 0.0001
+        )
+    }
+
+    func testMetRateRespectsTarget() {
+        // Target 2 over 2 days: Jun13=2 (met), Jun12=1 (missed) -> 1 of 2 = 0.5.
+        let counts = [day(2026, 6, 13): 2, day(2026, 6, 12): 1]
+        XCTAssertEqual(
+            Streaks.metRate(counts: counts, lastDays: 2, asOf: day(2026, 6, 13), calendar: calendar, metThreshold: 2),
+            0.5, accuracy: 0.0001
+        )
+    }
 }
