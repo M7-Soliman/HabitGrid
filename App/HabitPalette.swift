@@ -1,17 +1,17 @@
 import Foundation
 
-// The fixed set of colors a habit can use. A curated palette looks cleaner and more
-// "designed" than a full color wheel, and maps straight to the hex we store.
+// Habit colors, borrowed from the Belora spec's role-color palette — a curated,
+// well-balanced set that looks intentional in both light and dark mode.
 enum HabitPalette {
     static let colors: [String] = [
-        "#39D353", // green
-        "#3FB9B0", // teal
-        "#4F9DDE", // blue
-        "#7A82E8", // indigo
-        "#B660E0", // purple
-        "#E0556E", // pink
-        "#E8923C", // orange
-        "#E6C84F", // yellow
+        "#818CF8", // indigo
+        "#A78BFA", // violet
+        "#FB7185", // rose
+        "#FB923C", // orange
+        "#E879F9", // fuchsia
+        "#22D3EE", // cyan
+        "#FDCA40", // gold
+        "#A8C5F5", // brand blue
     ]
 
     static var `default`: String { colors[0] }

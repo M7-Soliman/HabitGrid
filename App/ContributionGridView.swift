@@ -41,11 +41,11 @@ struct ContributionGridView: View {
         let isToday = day.map { Calendar.current.isDate($0.date, inSameDayAs: today) } ?? false
         let level = day?.level ?? 0
         return ZStack {
-            // Empty backing cell — a semantic gray that adapts to light/dark.
+            // Empty backing cell — adaptive token (calm, near-monochrome).
             RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                .fill(Color(.systemGray5))
-            // Habit color on top, stronger at higher levels. Compositing OVER the gray
-            // (rather than over the dark card) keeps low levels readable in both modes.
+                .fill(Color.gridEmpty)
+            // Habit color on top, stronger at higher levels. Compositing OVER the empty
+            // backing (rather than the card) keeps low levels readable in both modes.
             if level > 0 {
                 RoundedRectangle(cornerRadius: 2.5, style: .continuous)
                     .fill(baseColor.opacity(intensity(forLevel: level)))
@@ -54,7 +54,7 @@ struct ContributionGridView: View {
         .frame(width: cellSize, height: cellSize)
         .overlay(
             RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                .strokeBorder(isToday ? Color.primary.opacity(0.6) : .clear, lineWidth: 1.2)
+                .strokeBorder(isToday ? Color.brand : .clear, lineWidth: 1.2)
         )
     }
 
@@ -68,9 +68,10 @@ struct ContributionGridView: View {
     private var monthHeader: some View {
         HStack(spacing: spacing) {
             ForEach(monthSegments()) { segment in
-                Text(segment.label)
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
+                Text(segment.label.uppercased())
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .tracking(0.3)
+                    .foregroundStyle(Color.fg4)
                     .frame(width: width(forColumns: segment.columnCount), alignment: .leading)
             }
         }

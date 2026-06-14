@@ -31,3 +31,6 @@ Carthage/Build/
 
 # Xcode project is generated from project.yml by xcodegen — don't track it
 *.xcodeproj/
+
+# Design spec belongs to another (private) app — keep it out of this public repo
+DesignSpec.md

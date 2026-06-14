@@ -2,8 +2,8 @@ import SwiftUI
 import SwiftData
 import HabitCore
 
-// A single habit, drawn as a rounded card: header (color dot + name + today's toggle),
-// then a flame streak badge on the left and the contribution grid on the right.
+// A single habit as a Belora-style card: shape defined by a 1px border (no shadow),
+// mono streak count, calm typography. Header + flame streak + contribution grid.
 struct HabitCardView: View {
     @Environment(\.modelContext) private var context
     let habit: HabitModel
@@ -18,14 +18,13 @@ struct HabitCardView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(.secondarySystemGroupedBackground))
-                .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Color.appCard)
         )
-        // Hairline border for definition (mostly noticeable in dark mode).
+        // Border defines the card (Belora: shape from border, not elevation).
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Color.cardBorder, lineWidth: 1)
         )
     }
 
@@ -36,40 +35,46 @@ struct HabitCardView: View {
         HStack(spacing: 10) {
             Circle()
                 .fill(color)
-                .frame(width: 12, height: 12)
+                .frame(width: 9, height: 9)
             Text(habit.name)
-                .font(.headline)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundStyle(Color.fg1)
             Spacer()
-            Button(action: toggleToday) {
+            Button {
+                Haptics.tap()
+                toggleToday()
+            } label: {
                 Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
                     .font(.title2)
-                    .foregroundStyle(isDoneToday ? color : Color.secondary)
+                    .foregroundStyle(isDoneToday ? color : Color.fg4)
+                    // A meaningful bounce on the human action of logging.
+                    .symbolEffect(.bounce, value: isDoneToday)
             }
             .buttonStyle(.plain)
         }
     }
 
-    // Flame + current streak, label underneath.
+    // Flame + current streak (mono count) with a small uppercase label, Belora-style.
     private var streakBadge: some View {
         VStack(spacing: 3) {
             HStack(spacing: 3) {
                 Image(systemName: "flame.fill")
-                    .font(.subheadline)
-                    .foregroundStyle(currentStreak > 0 ? color : Color.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(currentStreak > 0 ? color : Color.fg4)
                 Text("\(currentStreak)")
-                    .font(.title3.bold())
-                    .monospacedDigit()
+                    .font(.system(size: 19, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Color.fg1)
             }
-            Text("day streak")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            Text("DAY STREAK")
+                .font(.system(size: 9, weight: .semibold, design: .monospaced))
+                .tracking(0.4)
+                .foregroundStyle(Color.fg4)
         }
-        .frame(minWidth: 58)
+        .frame(minWidth: 60)
     }
 
     // --- Derive HabitCore inputs from this habit's stored completions. ---
 
-    // Per-day completion counts (what the grid + streak algorithms expect).
     private var dailyCounts: [Date: Int] {
         let calendar = Calendar.current
         var counts: [Date: Int] = [:]
@@ -93,7 +98,6 @@ struct HabitCardView: View {
         return habit.completions.contains { calendar.isDate($0.date, inSameDayAs: today) }
     }
 
-    // Toggle today's completion on/off.
     private func toggleToday() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
