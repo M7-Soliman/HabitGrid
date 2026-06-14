@@ -1,0 +1,7 @@
+# Copy this file to `signing.local.yml` (which is gitignored) and set your own
+# Apple Developer Team ID. Needed only for device builds + iCloud; simulator builds
+# work without it.
+settings:
+  base:
+    DEVELOPMENT_TEAM: XXXXXXXXXX
+    CODE_SIGN_STYLE: Automatic

@@ -2,6 +2,11 @@
 # instead of hand-editing in Xcode. Run `xcodegen generate` to (re)build HabitGrid.xcodeproj.
 name: HabitGrid
 
+# Signing (DEVELOPMENT_TEAM) lives in signing.local.yml — gitignored, not in this public
+# repo. Copy signing.local.example.yml to signing.local.yml and add your Team ID.
+include:
+  - signing.local.yml
+
 options:
   bundleIdPrefix: com.m7soliman
   deploymentTarget:

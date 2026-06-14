@@ -34,3 +34,6 @@ Carthage/Build/
 
 # Design spec belongs to another (private) app — keep it out of this public repo
 DesignSpec.md
+
+# Local signing config — holds the Apple Developer Team ID, never commit it
+signing.local.yml
