@@ -68,3 +68,7 @@ Run the logic tests:
 ```sh
 swift test --package-path Packages/HabitCore
 ```
+
+## License
+
+MIT — see [LICENSE](LICENSE). © 2026 Mohamed Elhussiny.
