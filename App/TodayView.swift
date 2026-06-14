@@ -1,30 +1,88 @@
 import SwiftUI
 import SwiftData
-import HabitCore
 
-// The main screen: a list of habits. Each row shows the habit's name, a tap-to-log button
-// for today, its current streak, and its contribution grid.
+// The main screen: your habits as cards. Add via the + button, edit/delete by swiping.
 struct TodayView: View {
     @Environment(\.modelContext) private var context
 
-    // @Query pulls habits straight from SwiftData and auto-refreshes the view on any change.
+    // Pulls habits from SwiftData and auto-refreshes on any change.
     @Query(sort: \HabitModel.createdAt) private var habits: [HabitModel]
+
+    // Seed the starter habits only once, ever (not every time the list goes empty).
+    @AppStorage("didSeedHabits") private var didSeed = false
+
+    @State private var showingAdd = false          // the "add" sheet
+    @State private var editingHabit: HabitModel?   // the "edit" sheet (non-nil = open)
 
     var body: some View {
         NavigationStack {
-            List {
-                ForEach(habits) { habit in
-                    HabitRow(habit: habit)
+            Group {
+                if habits.isEmpty {
+                    emptyState
+                } else {
+                    habitList
                 }
             }
+            .background(Color(.systemGroupedBackground))
             .navigationTitle("Today")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { showingAdd = true } label: {
+                        Image(systemName: "plus")
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAdd) {
+                HabitEditorView(habit: nil)
+            }
+            .sheet(item: $editingHabit) { habit in
+                HabitEditorView(habit: habit)
+            }
         }
-        // On first ever launch there are no habits, so drop in a few to play with.
-        .onAppear(perform: seedIfEmpty)
+        .onAppear(perform: seedIfNeeded)
     }
 
-    private func seedIfEmpty() {
-        guard habits.isEmpty else { return }
+    // Scrollable list of habit cards with swipe-to-edit/delete.
+    private var habitList: some View {
+        List {
+            ForEach(habits) { habit in
+                HabitCardView(habit: habit)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            context.delete(habit)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            editingHabit = habit
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(.blue)
+                    }
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+    }
+
+    // Shown when there are no habits (e.g. after deleting them all).
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No Habits", systemImage: "square.grid.3x3.fill")
+        } description: {
+            Text("Add a habit to start building your grid.")
+        } actions: {
+            Button("Add Habit") { showingAdd = true }
+                .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func seedIfNeeded() {
+        guard !didSeed, habits.isEmpty else { return }
         let samples = [
             ("Gym", "#39D353"),
             ("Read", "#4F9DDE"),
@@ -33,84 +91,6 @@ struct TodayView: View {
         for (name, color) in samples {
             context.insert(HabitModel(name: name, colorHex: color))
         }
-    }
-}
-
-// One habit's row: header (color dot + name + today's toggle) and, below, streak + grid.
-struct HabitRow: View {
-    @Environment(\.modelContext) private var context
-    let habit: HabitModel
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-
-            // Header line: color dot, name, and the tap-to-log button for today.
-            HStack {
-                Circle()
-                    .fill(Color(hex: habit.colorHex))
-                    .frame(width: 12, height: 12)
-                Text(habit.name)
-                    .font(.headline)
-                Spacer()
-                Button(action: toggleToday) {
-                    Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
-                        .font(.title2)
-                        .foregroundStyle(Color(hex: habit.colorHex))
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Streak number on the left, grid on the right.
-            HStack(alignment: .center, spacing: 14) {
-                VStack(spacing: 0) {
-                    Text("\(currentStreak)")
-                        .font(.title2.bold())
-                        .monospacedDigit()
-                    Text("streak")
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                }
-                ContributionGridView(grid: grid, baseColor: Color(hex: habit.colorHex))
-            }
-        }
-        .padding(.vertical, 6)
-    }
-
-    // --- Derived data: turn this habit's completions into the shapes HabitCore wants. ---
-
-    // Bucket completions into per-day counts (the input HabitCore's algorithms expect).
-    private var dailyCounts: [Date: Int] {
-        let calendar = Calendar.current
-        var counts: [Date: Int] = [:]
-        for completion in habit.completions {
-            counts[calendar.startOfDay(for: completion.date), default: 0] += 1
-        }
-        return counts
-    }
-
-    private var grid: ContributionGrid {
-        ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts)
-    }
-
-    private var currentStreak: Int {
-        Streaks.current(counts: dailyCounts)
-    }
-
-    // Has this habit been logged today already?
-    private var isDoneToday: Bool {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return habit.completions.contains { calendar.isDate($0.date, inSameDayAs: today) }
-    }
-
-    // Tapping toggles today: add a completion if none today, else remove today's.
-    private func toggleToday() {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        if let existing = habit.completions.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
-            context.delete(existing)
-        } else {
-            context.insert(CompletionModel(date: Date(), habit: habit))
-        }
+        didSeed = true
     }
 }
