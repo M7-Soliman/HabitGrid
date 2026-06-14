@@ -104,6 +104,7 @@ struct HabitWidgetView: View {
             )
             Spacer(minLength: 0)
         }
+        .padding(12)   // our own margin (system margins are disabled below)
         .containerBackground(Color.appBg, for: .widget)
         // Tapping the widget deep-links into that habit's detail screen.
         .widgetURL(entry.habitID.map { URL(string: "habitgrid://habit/\($0.uuidString)")! })
@@ -120,5 +121,6 @@ struct HabitWidget: Widget {
         .configurationDisplayName("Habit Grid")
         .description("A habit's contribution grid and streak.")
         .supportedFamilies([.systemSmall, .systemMedium])
+        .contentMarginsDisabled()   // reclaim the (large) default margins so the grid fits
     }
 }
