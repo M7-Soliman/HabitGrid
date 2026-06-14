@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Xcode — user-specific state
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Xcode — build products
+build/
+DerivedData/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# CocoaPods / Carthage (only if you ever add them)
+Pods/
+Carthage/Build/
+
+# Misc
+*.log
