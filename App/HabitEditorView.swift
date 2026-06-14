@@ -10,7 +10,7 @@ struct HabitEditorView: View {
     let habit: HabitModel?
 
     @State private var name = ""
-    @State private var colorHex = HabitPalette.default
+    @State private var color = Color(hex: HabitPalette.default)
     @State private var target = 1
 
     var body: some View {
@@ -30,7 +30,8 @@ struct HabitEditorView: View {
                     }
                 }
                 Section("Color") {
-                    colorPalette
+                    // Full system color picker — spectrum, sliders, and a hex field.
+                    ColorPicker("Habit color", selection: $color, supportsOpacity: false)
                 }
             }
             .navigationTitle(habit == nil ? "New Habit" : "Edit Habit")
@@ -48,41 +49,24 @@ struct HabitEditorView: View {
                 // Pre-fill the fields when editing.
                 if let habit {
                     name = habit.name
-                    colorHex = habit.colorHex
+                    color = Color(hex: habit.colorHex)
                     target = habit.dailyTarget
                 }
             }
         }
     }
 
-    // A grid of color swatches; the selected one gets a ring.
-    private var colorPalette: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 14) {
-            ForEach(HabitPalette.colors, id: \.self) { hex in
-                Circle()
-                    .fill(Color(hex: hex))
-                    .frame(width: 34, height: 34)
-                    .overlay(
-                        Circle()
-                            .strokeBorder(Color.primary, lineWidth: colorHex == hex ? 3 : 0)
-                            .padding(-3)
-                    )
-                    .onTapGesture { colorHex = hex }
-            }
-        }
-        .padding(.vertical, 6)
-    }
-
     // Create or update, then close the sheet.
     private func save() {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        let hex = color.hexString
         if let habit {
             habit.name = trimmed
-            habit.colorHex = colorHex
+            habit.colorHex = hex
             habit.dailyTarget = target
         } else {
-            context.insert(HabitModel(name: trimmed, colorHex: colorHex, dailyTarget: target))
+            context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target))
         }
         dismiss()
     }

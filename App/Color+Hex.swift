@@ -14,4 +14,12 @@ extension Color {
         let blue = Double(rgb & 0xFF) / 255
         self.init(red: red, green: green, blue: blue)
     }
+
+    // The reverse: a "#RRGGBB" string for storing a color the user picked.
+    var hexString: String {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        UIColor(self).getRed(&r, green: &g, blue: &b, alpha: &a)
+        func channel(_ v: CGFloat) -> Int { Int((max(0, min(1, v)) * 255).rounded()) }
+        return String(format: "#%02X%02X%02X", channel(r), channel(g), channel(b))
+    }
 }
