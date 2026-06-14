@@ -9,9 +9,9 @@ struct ContributionGridView: View {
     let baseColor: Color           // this habit's color; intensity scales its opacity
     var scrollable: Bool = true    // off for widgets (they can't scroll)
     var showMonthLabels: Bool = true
+    var cellSize: CGFloat = 11     // smaller in widgets so 7 rows fit
+    var spacing: CGFloat = 3
 
-    private let cellSize: CGFloat = 11
-    private let spacing: CGFloat = 3
     private let today = Calendar.current.startOfDay(for: Date())
 
     var body: some View {

@@ -32,6 +32,7 @@ targets:
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon   # use App/Assets.xcassets/AppIcon
         CODE_SIGN_ENTITLEMENTS: App/HabitGrid.entitlements
+        INFOPLIST_FILE: App/Info.plist                # registers the habitgrid:// URL scheme
 
   HabitWidgetExtension:
     type: app-extension

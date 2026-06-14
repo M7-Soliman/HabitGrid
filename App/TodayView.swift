@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 // The main screen: a calm summary header (progress ring) over a list of habit cards.
 // Add via +, edit/delete by swiping. Styled to the Belora design language.
@@ -42,6 +43,18 @@ struct TodayView: View {
         }
         .tint(Color.brand)
         .onAppear(perform: seedIfNeeded)
+        .onOpenURL(perform: open)
+    }
+
+    // Handle habitgrid://habit/<uuid> from the widget — open that habit's detail screen.
+    private func open(_ url: URL) {
+        guard url.scheme == "habitgrid", url.host == "habit",
+              let last = url.pathComponents.last, let id = UUID(uuidString: last) else { return }
+        let habit = try? context.fetch(
+            FetchDescriptor<HabitModel>(predicate: #Predicate { $0.id == id })
+        ).first
+        // Defer so navigation is ready even on a cold launch from the widget.
+        DispatchQueue.main.async { selectedHabit = habit }
     }
 
     // Progress ring + "N of M done today" + date.
@@ -77,6 +90,7 @@ struct TodayView: View {
                         // Belora: no red. Delete uses a muted tone; the icon carries meaning.
                         Button(role: .destructive) {
                             context.delete(habit)
+                            WidgetCenter.shared.reloadAllTimelines()
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }

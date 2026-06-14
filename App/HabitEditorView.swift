@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 
 // A sheet for creating a new habit or editing an existing one (name + color).
 // When `habit` is nil we're adding; otherwise we're editing that habit.
@@ -68,6 +69,7 @@ struct HabitEditorView: View {
         } else {
             context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target))
         }
+        WidgetCenter.shared.reloadAllTimelines()
         dismiss()
     }
 }

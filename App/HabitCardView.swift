@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import WidgetKit
 import HabitCore
 
 // A single habit as a Belora-style card: shape defined by a 1px border (no shadow),
@@ -98,6 +99,7 @@ struct HabitCardView: View {
     // +1: log another occurrence today.
     private func increment() {
         context.insert(CompletionModel(date: Date(), habit: habit))
+        WidgetCenter.shared.reloadAllTimelines()   // refresh the widget right away
     }
 
     // −1: remove one of today's occurrences (if any).
@@ -106,6 +108,7 @@ struct HabitCardView: View {
         let today = calendar.startOfDay(for: Date())
         if let existing = habit.completions.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
             context.delete(existing)
+            WidgetCenter.shared.reloadAllTimelines()
         }
     }
 }

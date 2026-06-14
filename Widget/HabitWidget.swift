@@ -6,6 +6,7 @@ import HabitCore
 // One timeline entry = a snapshot of the chosen habit's grid + streak.
 struct HabitEntry: TimelineEntry, Sendable {
     let date: Date
+    let habitID: UUID?
     let habitName: String?
     let colorHex: String
     let target: Int
@@ -16,7 +17,7 @@ struct HabitEntry: TimelineEntry, Sendable {
 // Reads the shared store and builds entries for the configured habit.
 struct HabitProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> HabitEntry {
-        HabitEntry(date: .now, habitName: "Habit", colorHex: "#A8C5F5", target: 1, streak: 0,
+        HabitEntry(date: .now, habitID: nil, habitName: "Habit", colorHex: "#A8C5F5", target: 1, streak: 0,
                    grid: ContributionGridBuilder.build(endingOn: .now, weeks: weeks(for: context.family), counts: [:]))
     }
 
@@ -34,7 +35,7 @@ struct HabitProvider: AppIntentTimelineProvider {
 
     // How many week-columns fit each widget size.
     private func weeks(for family: WidgetFamily) -> Int {
-        family == .systemMedium ? 22 : 11
+        family == .systemMedium ? 20 : 12
     }
 
     @MainActor
@@ -52,7 +53,7 @@ struct HabitProvider: AppIntentTimelineProvider {
         }
 
         guard let habit else {
-            return HabitEntry(date: .now, habitName: nil, colorHex: "#A8C5F5", target: 1, streak: 0,
+            return HabitEntry(date: .now, habitID: nil, habitName: nil, colorHex: "#A8C5F5", target: 1, streak: 0,
                               grid: ContributionGridBuilder.build(endingOn: .now, weeks: weekCount, counts: [:]))
         }
 
@@ -64,7 +65,7 @@ struct HabitProvider: AppIntentTimelineProvider {
         let grid = ContributionGridBuilder.build(endingOn: .now, weeks: weekCount, counts: counts, target: habit.dailyTarget)
         let streak = Streaks.current(counts: counts, metThreshold: habit.dailyTarget)
 
-        return HabitEntry(date: .now, habitName: habit.name, colorHex: habit.colorHex,
+        return HabitEntry(date: .now, habitID: habit.id, habitName: habit.name, colorHex: habit.colorHex,
                           target: habit.dailyTarget, streak: streak, grid: grid)
     }
 }
@@ -72,6 +73,8 @@ struct HabitProvider: AppIntentTimelineProvider {
 struct HabitWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: HabitEntry
+
+    private var isMedium: Bool { family == .systemMedium }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -95,11 +98,15 @@ struct HabitWidgetView: View {
                 grid: entry.grid,
                 baseColor: Color(hex: entry.colorHex),
                 scrollable: false,
-                showMonthLabels: family == .systemMedium
+                showMonthLabels: isMedium,
+                cellSize: isMedium ? 11 : 9,    // smaller cells on the small widget so 7 rows fit
+                spacing: isMedium ? 3 : 2
             )
             Spacer(minLength: 0)
         }
         .containerBackground(Color.appBg, for: .widget)
+        // Tapping the widget deep-links into that habit's detail screen.
+        .widgetURL(entry.habitID.map { URL(string: "habitgrid://habit/\($0.uuidString)")! })
     }
 }
 
