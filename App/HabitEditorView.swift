@@ -11,12 +11,23 @@ struct HabitEditorView: View {
 
     @State private var name = ""
     @State private var colorHex = HabitPalette.default
+    @State private var target = 1
 
     var body: some View {
         NavigationStack {
             Form {
                 Section("Name") {
                     TextField("e.g. Gym", text: $name)
+                }
+                Section("Daily goal") {
+                    Stepper(value: $target, in: 1...20) {
+                        HStack {
+                            Text("Target")
+                            Spacer()
+                            Text(target == 1 ? "Once a day" : "\(target)× a day")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 Section("Color") {
                     colorPalette
@@ -38,6 +49,7 @@ struct HabitEditorView: View {
                 if let habit {
                     name = habit.name
                     colorHex = habit.colorHex
+                    target = habit.dailyTarget
                 }
             }
         }
@@ -68,8 +80,9 @@ struct HabitEditorView: View {
         if let habit {
             habit.name = trimmed
             habit.colorHex = colorHex
+            habit.dailyTarget = target
         } else {
-            context.insert(HabitModel(name: trimmed, colorHex: colorHex))
+            context.insert(HabitModel(name: trimmed, colorHex: colorHex, dailyTarget: target))
         }
         dismiss()
     }

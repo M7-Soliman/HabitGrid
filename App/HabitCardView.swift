@@ -40,17 +40,13 @@ struct HabitCardView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.fg1)
             Spacer()
-            Button {
-                Haptics.tap()
-                toggleToday()
-            } label: {
-                Image(systemName: isDoneToday ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundStyle(isDoneToday ? color : Color.fg4)
-                    // A meaningful bounce on the human action of logging.
-                    .symbolEffect(.bounce, value: isDoneToday)
-            }
-            .buttonStyle(.plain)
+            LogButton(
+                count: todayCount,
+                target: habit.dailyTarget,
+                color: color,
+                onIncrement: increment,
+                onDecrement: decrement
+            )
         }
     }
 
@@ -85,26 +81,31 @@ struct HabitCardView: View {
     }
 
     private var grid: ContributionGrid {
-        ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts)
+        ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts, target: habit.dailyTarget)
     }
 
     private var currentStreak: Int {
-        Streaks.current(counts: dailyCounts)
+        Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget)
     }
 
-    private var isDoneToday: Bool {
+    // How many times the habit was logged today.
+    private var todayCount: Int {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        return habit.completions.contains { calendar.isDate($0.date, inSameDayAs: today) }
+        return habit.completions.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
     }
 
-    private func toggleToday() {
+    // +1: log another occurrence today.
+    private func increment() {
+        context.insert(CompletionModel(date: Date(), habit: habit))
+    }
+
+    // −1: remove one of today's occurrences (if any).
+    private func decrement() {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         if let existing = habit.completions.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
             context.delete(existing)
-        } else {
-            context.insert(CompletionModel(date: Date(), habit: habit))
         }
     }
 }

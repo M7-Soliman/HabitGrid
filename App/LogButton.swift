@@ -1,0 +1,53 @@
+import SwiftUI
+
+// Per-habit logging control: a ring that fills toward the daily target.
+// Tap = +1, long-press = −1. Shows the count; fills solid + checks when the goal is met.
+struct LogButton: View {
+    let count: Int
+    let target: Int
+    let color: Color
+    let onIncrement: () -> Void
+    let onDecrement: () -> Void
+
+    private var goal: Int { max(target, 1) }
+    private var fraction: Double { min(1, Double(count) / Double(goal)) }
+    private var met: Bool { count >= goal }
+
+    var body: some View {
+        ZStack {
+            Circle().stroke(Color.line2, lineWidth: 2.5)
+            if met {
+                Circle().fill(color)
+            } else {
+                Circle()
+                    .trim(from: 0, to: fraction)
+                    .stroke(color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))   // start at 12 o'clock
+            }
+            label
+        }
+        .frame(width: 30, height: 30)
+        .contentShape(Circle())
+        // High priority so the button wins over the card's tap-to-open gesture.
+        // Long-press (−1) is tried first; a quick tap falls through to +1.
+        .highPriorityGesture(
+            LongPressGesture(minimumDuration: 0.4)
+                .onEnded { _ in Haptics.tap(); onDecrement() }
+                .exclusively(before: TapGesture().onEnded { Haptics.tap(); onIncrement() })
+        )
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: count)
+    }
+
+    @ViewBuilder private var label: some View {
+        if met && goal == 1 && count == 1 {
+            Image(systemName: "checkmark")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(.white)
+        } else if count > 0 {
+            Text("\(count)")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundStyle(met ? .white : Color.fg1)
+        }
+        // count == 0 → empty circle, no label
+    }
+}

@@ -40,6 +40,21 @@ final class ContributionGridTests: XCTestCase {
         XCTAssertEqual(hit?.level, 2, "count 3 falls in the 2..<4 bucket -> level 2")
     }
 
+    func testTargetBasedIntensity() {
+        let target = day(2026, 6, 10)
+        func level(count: Int, goal: Int) -> Int? {
+            let grid = ContributionGridBuilder.build(
+                endingOn: day(2026, 6, 13), weeks: 4, counts: [target: count],
+                calendar: calendar, target: goal
+            )
+            return grid.cells.first { calendar.isDate($0.date, inSameDayAs: target) }?.level
+        }
+        XCTAssertEqual(level(count: 1, goal: 2), 2, "half the goal -> level 2")
+        XCTAssertEqual(level(count: 2, goal: 2), 4, "meeting the goal -> darkest")
+        XCTAssertEqual(level(count: 3, goal: 2), 4, "exceeding the goal stays darkest")
+        XCTAssertEqual(level(count: 1, goal: 1), 4, "goal of 1, done once -> darkest")
+    }
+
     func testFutureDaysInFinalWeekAreNil() {
         // end is a Wednesday; Thu–Sat of that week are in the future and must be blank.
         let grid = ContributionGridBuilder.build(

@@ -28,10 +28,10 @@ struct HabitDetailView: View {
     // Four stat cells in a row: current streak, longest streak, total, this year.
     private var statsRow: some View {
         HStack(spacing: 10) {
-            statCell("\(Streaks.current(counts: dailyCounts))", "STREAK")
-            statCell("\(Streaks.longest(counts: dailyCounts))", "LONGEST")
+            statCell("\(Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget))", "STREAK")
+            statCell("\(Streaks.longest(counts: dailyCounts, metThreshold: habit.dailyTarget))", "LONGEST")
             statCell("\(habit.completions.count)", "TOTAL")
-            statCell("\(thisYearCount)", "YEAR")
+            statCell(habit.dailyTarget == 1 ? "1×" : "\(habit.dailyTarget)×", "GOAL")
         }
     }
 
@@ -94,9 +94,9 @@ struct HabitDetailView: View {
         return counts
     }
 
-    // A full year (53 week-columns).
+    // A full year (53 week-columns), shaded relative to the daily goal.
     private var yearGrid: ContributionGrid {
-        ContributionGridBuilder.build(endingOn: Date(), weeks: 53, counts: dailyCounts)
+        ContributionGridBuilder.build(endingOn: Date(), weeks: 53, counts: dailyCounts, target: habit.dailyTarget)
     }
 
     private var thisYearCount: Int {

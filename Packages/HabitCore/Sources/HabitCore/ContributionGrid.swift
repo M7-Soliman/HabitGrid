@@ -45,12 +45,15 @@ public enum ContributionGridBuilder {
     ///   - calendar: Calendar used for day/week boundaries. Inject a fixed one in tests.
     ///   - levelThresholds: Ascending counts at which the shading steps up to 1,2,3,4.
     ///     Default `[1,2,4,6]`: 1→L1, 2–3→L2, 4–5→L3, 6+→L4.
+    ///   - target: If given, intensity scales to the daily goal — hitting `target` is the
+    ///     darkest level. If nil, the fixed `levelThresholds` are used instead.
     public static func build(
         endingOn end: Date,
         weeks weekCount: Int,
         counts: [Date: Int],
         calendar: Calendar = .current,
-        levelThresholds: [Int] = [1, 2, 4, 6]
+        levelThresholds: [Int] = [1, 2, 4, 6],
+        target: Int? = nil
     ) -> ContributionGrid {
         precondition(weekCount > 0, "weekCount must be positive")
 
@@ -93,12 +96,23 @@ public enum ContributionGridBuilder {
                     continue
                 }
                 let count = countByDay[day] ?? 0
-                week.append(GridCell(date: day, count: count, level: level(for: count, thresholds: levelThresholds)))
+                let cellLevel = target.map { Self.level(forCount: count, target: $0) }
+                    ?? level(for: count, thresholds: levelThresholds)
+                week.append(GridCell(date: day, count: count, level: cellLevel))
             }
             weeks.append(week)
         }
 
         return ContributionGrid(weeks: weeks)
+    }
+
+    /// Maps a count to a `0...4` shading level relative to a daily `target`:
+    /// reaching (or exceeding) the target is the darkest level 4.
+    static func level(forCount count: Int, target: Int) -> Int {
+        guard count > 0 else { return 0 }
+        let goal = max(target, 1)
+        let scaled = Int((Double(count) / Double(goal) * 4).rounded(.up))
+        return max(1, min(scaled, 4))
     }
 
     /// Maps a raw count to a `0...4` shading level via ascending thresholds.

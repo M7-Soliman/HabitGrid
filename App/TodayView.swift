@@ -112,7 +112,8 @@ struct TodayView: View {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         return habits.filter { habit in
-            habit.completions.contains { calendar.isDate($0.date, inSameDayAs: today) }
+            let todayCount = habit.completions.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
+            return todayCount >= max(habit.dailyTarget, 1)   // "done" = met the goal
         }.count
     }
 
@@ -126,13 +127,14 @@ struct TodayView: View {
 
     private func seedIfNeeded() {
         guard !didSeed, habits.isEmpty else { return }
-        let samples = [
-            ("Gym", "#818CF8"),
-            ("Read", "#22D3EE"),
-            ("Meditate", "#A78BFA"),
+        // (name, color, daily target) — "Code" shows a goal of 2× a day.
+        let samples: [(String, String, Int)] = [
+            ("Gym", "#818CF8", 1),
+            ("Read", "#22D3EE", 1),
+            ("Code", "#A78BFA", 2),
         ]
-        for (name, color) in samples {
-            context.insert(HabitModel(name: name, colorHex: color))
+        for (name, color, target) in samples {
+            context.insert(HabitModel(name: name, colorHex: color, dailyTarget: target))
         }
         didSeed = true
     }

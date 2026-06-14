@@ -48,4 +48,20 @@ final class StreakTests: XCTestCase {
     func testLongestStreakIsZeroForNoCompletions() {
         XCTAssertEqual(Streaks.longest(counts: [:], calendar: calendar), 0)
     }
+
+    func testCurrentStreakRespectsTarget() {
+        // target 2: today=2 (met), yesterday=1 (missed) -> streak of 1.
+        let counts = [day(2026, 6, 12): 1, day(2026, 6, 13): 2]
+        XCTAssertEqual(Streaks.current(asOf: day(2026, 6, 13), counts: counts, calendar: calendar, metThreshold: 2), 1)
+
+        // all three days meet the goal of 2.
+        let counts2 = [day(2026, 6, 11): 2, day(2026, 6, 12): 3, day(2026, 6, 13): 2]
+        XCTAssertEqual(Streaks.current(asOf: day(2026, 6, 13), counts: counts2, calendar: calendar, metThreshold: 2), 3)
+    }
+
+    func testLongestStreakRespectsTarget() {
+        // With goal 2: runs meeting it are [Jun1,Jun2] (2) and [Jun4] (1) -> longest 2.
+        let counts = [day(2026, 6, 1): 2, day(2026, 6, 2): 2, day(2026, 6, 3): 1, day(2026, 6, 4): 2]
+        XCTAssertEqual(Streaks.longest(counts: counts, calendar: calendar, metThreshold: 2), 2)
+    }
 }

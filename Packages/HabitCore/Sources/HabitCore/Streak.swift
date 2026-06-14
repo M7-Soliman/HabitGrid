@@ -6,27 +6,29 @@ import Foundation
 /// so they're fully testable without any UI or database.
 public enum Streaks {
 
-    /// The current run of consecutive completed days ending today.
+    /// The current run of consecutive days ending today that **meet** `metThreshold`
+    /// (the habit's daily target; default 1 = "logged at least once").
     ///
-    /// "Completed" means count > 0. If *today* isn't done yet, the streak is measured from
-    /// *yesterday* — so an active streak isn't prematurely zeroed just because you haven't
-    /// logged today. Returns 0 if neither today nor yesterday is completed.
+    /// If *today* doesn't meet the goal yet, the streak is measured from *yesterday* — so an
+    /// active streak isn't prematurely zeroed just because you haven't finished today.
     public static func current(
         asOf date: Date = Date(),
         counts: [Date: Int],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        metThreshold: Int = 1
     ) -> Int {
+        let goal = max(metThreshold, 1)
         let byDay = normalize(counts, calendar: calendar)
 
         var day = calendar.startOfDay(for: date)
-        if (byDay[day] ?? 0) == 0 {
-            // Grace for "today not logged yet": start counting from yesterday.
+        if (byDay[day] ?? 0) < goal {
+            // Grace for "today not done yet": start counting from yesterday.
             guard let yesterday = calendar.date(byAdding: .day, value: -1, to: day) else { return 0 }
             day = yesterday
         }
 
         var streak = 0
-        while (byDay[day] ?? 0) > 0 {
+        while (byDay[day] ?? 0) >= goal {
             streak += 1
             guard let prev = calendar.date(byAdding: .day, value: -1, to: day) else { break }
             day = prev
@@ -34,13 +36,15 @@ public enum Streaks {
         return streak
     }
 
-    /// The longest run of consecutive completed days ever recorded.
+    /// The longest run of consecutive goal-meeting days ever recorded.
     public static func longest(
         counts: [Date: Int],
-        calendar: Calendar = .current
+        calendar: Calendar = .current,
+        metThreshold: Int = 1
     ) -> Int {
+        let goal = max(metThreshold, 1)
         let days = normalize(counts, calendar: calendar)
-            .filter { $0.value > 0 }
+            .filter { $0.value >= goal }
             .keys
             .sorted()
         guard let first = days.first else { return 0 }
