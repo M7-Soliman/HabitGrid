@@ -60,8 +60,15 @@ struct HabitProvider: AppIntentTimelineProvider {
         for completion in habit.completionsList {
             counts[calendar.startOfDay(for: completion.date), default: 0] += 1
         }
-        let grid = ContributionGridBuilder.build(endingOn: .now, weeks: weekCount, counts: counts, target: habit.dailyTarget)
-        let streak = Streaks.current(counts: counts, metThreshold: habit.dailyTarget)
+        let grid: ContributionGrid
+        let streak: Int
+        if habit.kind == .quit {
+            grid = ContributionGridBuilder.buildQuit(start: habit.createdAt, endingOn: .now, weeks: weekCount, counts: counts)
+            streak = Streaks.cleanStreak(counts: counts, start: habit.createdAt)
+        } else {
+            grid = ContributionGridBuilder.build(endingOn: .now, weeks: weekCount, counts: counts, target: habit.dailyTarget)
+            streak = Streaks.current(counts: counts, metThreshold: habit.dailyTarget)
+        }
 
         return HabitEntry(date: .now, habitID: habit.id, habitName: habit.name, colorHex: habit.colorHex,
                           target: habit.dailyTarget, streak: streak, grid: grid)

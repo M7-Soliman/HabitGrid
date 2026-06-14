@@ -82,4 +82,39 @@ final class StreakTests: XCTestCase {
             0.5, accuracy: 0.0001
         )
     }
+
+    // MARK: Quit habits
+
+    func testCleanStreak() {
+        // Started Jun 1, no slips -> 13 days clean on Jun 13.
+        XCTAssertEqual(Streaks.cleanStreak(asOf: day(2026, 6, 13), counts: [:], calendar: calendar, start: day(2026, 6, 1)), 13)
+        // Slipped Jun 10 -> clean Jun 11–13 = 3.
+        XCTAssertEqual(Streaks.cleanStreak(asOf: day(2026, 6, 13), counts: [day(2026, 6, 10): 1], calendar: calendar, start: day(2026, 6, 1)), 3)
+        // Slipped today -> 0.
+        XCTAssertEqual(Streaks.cleanStreak(asOf: day(2026, 6, 13), counts: [day(2026, 6, 13): 1], calendar: calendar, start: day(2026, 6, 1)), 0)
+    }
+
+    func testCleanRate() {
+        // Jun 1–10 (10 days), slipped 2 -> 8/10 = 0.8.
+        let counts = [day(2026, 6, 3): 1, day(2026, 6, 7): 1]
+        XCTAssertEqual(Streaks.cleanRate(counts: counts, from: day(2026, 6, 1), asOf: day(2026, 6, 10), calendar: calendar), 0.8, accuracy: 0.0001)
+    }
+
+    func testLongestClean() {
+        // Slips on Jun 4 and Jun 8 -> longest clean run is 3 (Jun 1–3 or Jun 5–7).
+        let counts = [day(2026, 6, 4): 1, day(2026, 6, 8): 1]
+        XCTAssertEqual(Streaks.longestClean(counts: counts, from: day(2026, 6, 1), asOf: day(2026, 6, 10), calendar: calendar), 3)
+    }
+
+    func testQuitGridCleanVsSlip() {
+        let slipDay = day(2026, 6, 10)
+        let grid = ContributionGridBuilder.buildQuit(
+            start: day(2026, 6, 1), endingOn: day(2026, 6, 13), weeks: 4, counts: [slipDay: 1], calendar: calendar
+        )
+        let slip = grid.cells.first { calendar.isDate($0.date, inSameDayAs: slipDay) }
+        XCTAssertEqual(slip?.isSlip, true)
+        let clean = grid.cells.first { calendar.isDate($0.date, inSameDayAs: day(2026, 6, 9)) }
+        XCTAssertEqual(clean?.isSlip, false)
+        XCTAssertEqual(clean?.level, 4, "a clean day is filled")
+    }
 }

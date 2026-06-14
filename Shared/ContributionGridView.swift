@@ -68,13 +68,18 @@ struct ContributionGridView: View {
     private func squareView(for day: GridCell?) -> some View {
         let isToday = day.map { Calendar.current.isDate($0.date, inSameDayAs: highlightedDate) } ?? false
         let level = day?.level ?? 0
+        let isSlip = day?.isSlip ?? false
         return ZStack {
             // Empty backing cell — adaptive token (calm, near-monochrome).
             RoundedRectangle(cornerRadius: 2.5, style: .continuous)
                 .fill(Color.gridEmpty)
-            // Habit color on top, stronger at higher levels. Compositing OVER the empty
-            // backing (rather than the card) keeps low levels readable in both modes.
-            if level > 0 {
+            if isSlip {
+                // Quit habit: a slip day, shown in the warning color.
+                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                    .fill(Color.slip)
+            } else if level > 0 {
+                // Habit color on top, stronger at higher levels. Compositing OVER the empty
+                // backing (rather than the card) keeps low levels readable in both modes.
                 RoundedRectangle(cornerRadius: 2.5, style: .continuous)
                     .fill(baseColor.opacity(intensity(forLevel: level)))
             }

@@ -186,12 +186,12 @@ struct TodayView: View {
 
     // MARK: - Derived
 
-    // Habits that met their goal on the selected day.
+    // Habits "on track" on the selected day: build = met goal, quit = stayed clean.
     private var doneCount: Int {
         let calendar = Calendar.current
         return habits.filter { habit in
             let n = habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }.count
-            return n >= max(habit.dailyTarget, 1)
+            return habit.kind == .quit ? (n == 0) : (n >= max(habit.dailyTarget, 1))
         }.count
     }
 

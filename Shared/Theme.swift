@@ -28,6 +28,9 @@ extension Color {
 
     // Empty grid cell
     static let gridEmpty = dyn(dark: 0x1A1A1F, light: 0xEAEAEF)
+
+    // A slip on a "quit" habit (the one place we use red).
+    static let slip = dyn(dark: 0xF2555A, light: 0xE5484D)
 }
 
 // MARK: - Adaptive color helpers

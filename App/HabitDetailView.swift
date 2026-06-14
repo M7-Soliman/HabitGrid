@@ -11,7 +11,7 @@ struct HabitDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 statsRow
-                section(habit.dailyTarget > 1 ? "ACTIVITY · GOAL \(habit.dailyTarget)×/DAY" : "ACTIVITY") {
+                section(sectionTitle) {
                     ContributionGridView(grid: yearGrid, baseColor: color)
                     legend
                 }
@@ -24,20 +24,36 @@ struct HabitDetailView: View {
     }
 
     private var color: Color { Color(hex: habit.colorHex) }
+    private var isQuit: Bool { habit.kind == .quit }
 
-    // Four stat cells in a row: current streak, longest streak, total, this year.
+    private var sectionTitle: String {
+        if isQuit { return "DAYS CLEAN" }
+        return habit.dailyTarget > 1 ? "ACTIVITY · GOAL \(habit.dailyTarget)×/DAY" : "ACTIVITY"
+    }
+
+    // Stat cells differ by kind: build = streak/longest/total/%; quit = clean/best/slips/rate.
     private var statsRow: some View {
         HStack(spacing: 10) {
-            statCell("\(Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget))", "STREAK")
-            statCell("\(Streaks.longest(counts: dailyCounts, metThreshold: habit.dailyTarget))", "LONGEST")
-            statCell("\(habit.completionsList.count)", "TOTAL")
-            statCell("\(consistencyPercent)%", "OVERALL")
+            if isQuit {
+                statCell("\(Streaks.cleanStreak(counts: dailyCounts, start: habit.createdAt))", "CLEAN")
+                statCell("\(Streaks.longestClean(counts: dailyCounts, from: habit.createdAt))", "BEST")
+                statCell("\(habit.completionsList.count)", "SLIPS")
+                statCell("\(consistencyPercent)%", "RATE")
+            } else {
+                statCell("\(Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget))", "STREAK")
+                statCell("\(Streaks.longest(counts: dailyCounts, metThreshold: habit.dailyTarget))", "LONGEST")
+                statCell("\(habit.completionsList.count)", "TOTAL")
+                statCell("\(consistencyPercent)%", "OVERALL")
+            }
         }
     }
 
-    // Share of every day since the habit was FIRST LOGGED that met the daily goal.
+    // Build: % of days since first log that met the goal. Quit: % of days clean since created.
     private var consistencyPercent: Int {
         let calendar = Calendar.current
+        if isQuit {
+            return Int((Streaks.cleanRate(counts: dailyCounts, from: habit.createdAt) * 100).rounded())
+        }
         guard let firstLogged = habit.completionsList.map({ calendar.startOfDay(for: $0.date) }).min() else {
             return 0   // never logged
         }
@@ -78,20 +94,34 @@ struct HabitDetailView: View {
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.cardBorder, lineWidth: 1))
     }
 
-    // Less → More shading key.
-    private var legend: some View {
-        HStack(spacing: 5) {
-            Text("LESS")
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.fg4)
-            ForEach(0..<5, id: \.self) { level in
-                RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                    .fill(level == 0 ? Color.gridEmpty : color.opacity([0, 0.35, 0.55, 0.78, 1.0][level]))
-                    .frame(width: 10, height: 10)
+    // Shading key — Less→More for build habits, Clean/Slip for quit habits.
+    @ViewBuilder private var legend: some View {
+        if isQuit {
+            HStack(spacing: 10) {
+                legendItem(color, "CLEAN")
+                legendItem(Color.slip, "SLIP")
             }
-            Text("MORE")
-                .font(.system(size: 8, weight: .medium, design: .monospaced))
-                .foregroundStyle(Color.fg4)
+        } else {
+            HStack(spacing: 5) {
+                Text("LESS")
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color.fg4)
+                ForEach(0..<5, id: \.self) { level in
+                    RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                        .fill(level == 0 ? Color.gridEmpty : color.opacity([0, 0.35, 0.55, 0.78, 1.0][level]))
+                        .frame(width: 10, height: 10)
+                }
+                Text("MORE")
+                    .font(.system(size: 8, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Color.fg4)
+            }
+        }
+    }
+
+    private func legendItem(_ swatch: Color, _ label: String) -> some View {
+        HStack(spacing: 4) {
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous).fill(swatch).frame(width: 10, height: 10)
+            Text(label).font(.system(size: 8, weight: .medium, design: .monospaced)).foregroundStyle(Color.fg4)
         }
     }
 
@@ -106,9 +136,12 @@ struct HabitDetailView: View {
         return counts
     }
 
-    // A full year (53 week-columns), shaded relative to the daily goal.
+    // A full year (53 week-columns): build shades by goal; quit fills clean days + flags slips.
     private var yearGrid: ContributionGrid {
-        ContributionGridBuilder.build(endingOn: Date(), weeks: 53, counts: dailyCounts, target: habit.dailyTarget)
+        if isQuit {
+            return ContributionGridBuilder.buildQuit(start: habit.createdAt, endingOn: Date(), weeks: 53, counts: dailyCounts)
+        }
+        return ContributionGridBuilder.build(endingOn: Date(), weeks: 53, counts: dailyCounts, target: habit.dailyTarget)
     }
 
     private var thisYearCount: Int {

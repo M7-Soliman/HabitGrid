@@ -65,6 +65,69 @@ public enum Streaks {
         return longest
     }
 
+    // MARK: - Quit habits (logging is a "slip"; clean days are the win)
+
+    /// Days clean: consecutive days ending `asOf` with no slip (count 0), bounded by `start`.
+    /// Returns 0 if there was a slip today.
+    public static func cleanStreak(
+        asOf date: Date = Date(),
+        counts: [Date: Int],
+        calendar: Calendar = .current,
+        start: Date
+    ) -> Int {
+        let byDay = normalize(counts, calendar: calendar)
+        let startDay = calendar.startOfDay(for: start)
+        var day = calendar.startOfDay(for: date)
+        var streak = 0
+        while day >= startDay && (byDay[day] ?? 0) == 0 {
+            streak += 1
+            guard let prev = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+            day = prev
+        }
+        return streak
+    }
+
+    /// Fraction (0...1) of days from `start` to `asOf` that were clean (no slip).
+    public static func cleanRate(
+        counts: [Date: Int],
+        from start: Date,
+        asOf date: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Double {
+        let byDay = normalize(counts, calendar: calendar)
+        var day = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: date)
+        guard endDay >= day else { return 0 }
+        var total = 0, clean = 0
+        while day <= endDay {
+            total += 1
+            if (byDay[day] ?? 0) == 0 { clean += 1 }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return total > 0 ? Double(clean) / Double(total) : 0
+    }
+
+    /// Longest run of consecutive clean days between `start` and `asOf`.
+    public static func longestClean(
+        counts: [Date: Int],
+        from start: Date,
+        asOf date: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Int {
+        let byDay = normalize(counts, calendar: calendar)
+        var day = calendar.startOfDay(for: start)
+        let endDay = calendar.startOfDay(for: date)
+        guard endDay >= day else { return 0 }
+        var longest = 0, run = 0
+        while day <= endDay {
+            if (byDay[day] ?? 0) == 0 { run += 1; longest = max(longest, run) } else { run = 0 }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return longest
+    }
+
     /// The fraction (0...1) of the last `days` days (ending `asOf`) that met the goal.
     /// E.g. metRate over 30 days = your 30-day consistency.
     public static func metRate(

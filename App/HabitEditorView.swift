@@ -13,20 +13,34 @@ struct HabitEditorView: View {
     @State private var name = ""
     @State private var color = Color(hex: HabitPalette.default)
     @State private var target = 1
+    @State private var kind: HabitKind = .build
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Name") {
-                    TextField("e.g. Gym", text: $name)
+                Section {
+                    Picker("Type", selection: $kind) {
+                        Text("Build").tag(HabitKind.build)
+                        Text("Quit").tag(HabitKind.quit)
+                    }
+                    .pickerStyle(.segmented)
+                } footer: {
+                    Text(kind == .build
+                         ? "Log it each time you do it."
+                         : "Track days clean — only log a slip when you slip up.")
                 }
-                Section("Daily goal") {
-                    Stepper(value: $target, in: 1...20) {
-                        HStack {
-                            Text("Target")
-                            Spacer()
-                            Text(target == 1 ? "Once a day" : "\(target)× a day")
-                                .foregroundStyle(.secondary)
+                Section("Name") {
+                    TextField(kind == .build ? "e.g. Gym" : "e.g. No smoking", text: $name)
+                }
+                if kind == .build {
+                    Section("Daily goal") {
+                        Stepper(value: $target, in: 1...20) {
+                            HStack {
+                                Text("Target")
+                                Spacer()
+                                Text(target == 1 ? "Once a day" : "\(target)× a day")
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -52,6 +66,7 @@ struct HabitEditorView: View {
                     name = habit.name
                     color = Color(hex: habit.colorHex)
                     target = habit.dailyTarget
+                    kind = habit.kind
                 }
             }
         }
@@ -66,10 +81,11 @@ struct HabitEditorView: View {
             habit.name = trimmed
             habit.colorHex = hex
             habit.dailyTarget = target
+            habit.kind = kind
         } else {
             // Append new habits to the end of the manual order.
             let count = (try? context.fetchCount(FetchDescriptor<HabitModel>())) ?? 0
-            context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target, sortIndex: count))
+            context.insert(HabitModel(name: trimmed, colorHex: hex, dailyTarget: target, sortIndex: count, kind: kind))
         }
         WidgetCenter.shared.reloadAllTimelines()
         dismiss()

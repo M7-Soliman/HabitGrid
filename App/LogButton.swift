@@ -46,3 +46,28 @@ struct LogButton: View {
         // count == 0 → empty circle, no label
     }
 }
+
+// For "quit" habits: clean is the default (a calm outline in the habit color); tapping logs a
+// slip, turning it red with the slip count. Removing a slip uses the card's "−" button.
+struct QuitButton: View {
+    let slips: Int
+    let color: Color
+    let onSlip: () -> Void
+
+    var body: some View {
+        ZStack {
+            if slips > 0 {
+                Circle().fill(Color.slip)
+                Text("\(slips)")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white)
+            } else {
+                Circle().strokeBorder(color.opacity(0.7), lineWidth: 2.5)
+            }
+        }
+        .frame(width: 30, height: 30)
+        .contentShape(Circle())
+        .highPriorityGesture(TapGesture().onEnded { Haptics.tap(); onSlip() })
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: slips)
+    }
+}

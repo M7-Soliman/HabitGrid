@@ -52,12 +52,11 @@ struct HabitCardView: View {
                     .contentShape(Circle())
                     .highPriorityGesture(TapGesture().onEnded { Haptics.tap(); decrement() })
             }
-            LogButton(
-                count: count,
-                target: habit.dailyTarget,
-                color: color,
-                onIncrement: increment
-            )
+            if isQuit {
+                QuitButton(slips: count, color: color, onSlip: increment)
+            } else {
+                LogButton(count: count, target: habit.dailyTarget, color: color, onIncrement: increment)
+            }
         }
     }
 
@@ -67,12 +66,12 @@ struct HabitCardView: View {
             HStack(spacing: 3) {
                 Image(systemName: "flame.fill")
                     .font(.system(size: 12))
-                    .foregroundStyle(currentStreak > 0 ? color : Color.fg4)
-                Text("\(currentStreak)")
+                    .foregroundStyle(streakValue > 0 ? color : Color.fg4)
+                Text("\(streakValue)")
                     .font(.system(size: 19, weight: .semibold, design: .monospaced))
                     .foregroundStyle(Color.fg1)
             }
-            Text("DAY STREAK")
+            Text(isQuit ? "DAYS CLEAN" : "DAY STREAK")
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .tracking(0.4)
                 .foregroundStyle(Color.fg4)
@@ -91,13 +90,21 @@ struct HabitCardView: View {
         return counts
     }
 
+    private var isQuit: Bool { habit.kind == .quit }
+
     private var grid: ContributionGrid {
-        ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts, target: habit.dailyTarget)
+        if isQuit {
+            return ContributionGridBuilder.buildQuit(start: habit.createdAt, endingOn: Date(), weeks: 18, counts: dailyCounts)
+        }
+        return ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts, target: habit.dailyTarget)
     }
 
-    // Always the current streak (consecutive days ending today), regardless of viewed day.
-    private var currentStreak: Int {
-        Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget)
+    // Build: current streak (days meeting goal). Quit: days clean (no slip). Always today-based.
+    private var streakValue: Int {
+        if isQuit {
+            return Streaks.cleanStreak(counts: dailyCounts, start: habit.createdAt)
+        }
+        return Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget)
     }
 
     // How many times the habit was logged on the viewed day.
