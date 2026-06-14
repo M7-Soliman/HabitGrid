@@ -1,13 +1,13 @@
 import SwiftUI
 
 // Per-habit logging control: a ring that fills toward the daily target.
-// Tap = +1, long-press = −1. Shows the count; fills solid + checks when the goal is met.
+// Tap = +1. Shows the count; fills solid + checks when the goal is met.
+// (Removing one is a separate "−" button on the card — long-press is reserved for reordering.)
 struct LogButton: View {
     let count: Int
     let target: Int
     let color: Color
     let onIncrement: () -> Void
-    let onDecrement: () -> Void
 
     private var goal: Int { max(target, 1) }
     private var fraction: Double { min(1, Double(count) / Double(goal)) }
@@ -28,13 +28,8 @@ struct LogButton: View {
         }
         .frame(width: 30, height: 30)
         .contentShape(Circle())
-        // High priority so the button wins over the card's tap-to-open gesture.
-        // Long-press (−1) is tried first; a quick tap falls through to +1.
-        .highPriorityGesture(
-            LongPressGesture(minimumDuration: 0.4)
-                .onEnded { _ in Haptics.tap(); onDecrement() }
-                .exclusively(before: TapGesture().onEnded { Haptics.tap(); onIncrement() })
-        )
+        // High priority so the tap wins over the card's open + the list's reorder gestures.
+        .highPriorityGesture(TapGesture().onEnded { Haptics.tap(); onIncrement() })
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: count)
     }
 

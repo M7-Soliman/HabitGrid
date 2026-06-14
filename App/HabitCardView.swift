@@ -41,12 +41,21 @@ struct HabitCardView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.fg1)
             Spacer()
+            // "−" to remove one of today's logs; only shown when there's something to remove.
+            if todayCount > 0 {
+                Image(systemName: "minus")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color.fg3)
+                    .frame(width: 28, height: 28)
+                    .overlay(Circle().stroke(Color.line2, lineWidth: 1.5))
+                    .contentShape(Circle())
+                    .highPriorityGesture(TapGesture().onEnded { Haptics.tap(); decrement() })
+            }
             LogButton(
                 count: todayCount,
                 target: habit.dailyTarget,
                 color: color,
-                onIncrement: increment,
-                onDecrement: decrement
+                onIncrement: increment
             )
         }
     }
