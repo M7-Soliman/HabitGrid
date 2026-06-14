@@ -12,9 +12,12 @@ struct ContributionGridView: View {
     var cellSize: CGFloat = 11     // smaller in widgets so 7 rows fit
     var spacing: CGFloat = 3
     var highlightedDate: Date = Calendar.current.startOfDay(for: Date())   // ringed cell (default: today)
+    var fill: Bool = false         // size cells to fill the available space (widgets)
 
     var body: some View {
-        if scrollable {
+        if fill {
+            GeometryReader { geo in fitted(in: geo.size) }
+        } else if scrollable {
             // Overflowing columns scroll horizontally, anchored so recent weeks show first.
             ScrollView(.horizontal, showsIndicators: false) {
                 gridStack
@@ -23,6 +26,21 @@ struct ContributionGridView: View {
         } else {
             gridStack
         }
+    }
+
+    // Fill mode: size each cell so 7 rows fill the height, then show as many of the most
+    // recent week-columns as fit the width. Keeps widgets dense and edge-to-edge.
+    private func fitted(in size: CGSize) -> some View {
+        let labelHeight: CGFloat = showMonthLabels ? 16 : 0
+        let usableHeight = max(0, size.height - labelHeight)
+        let cell = max(4, (usableHeight - 6 * spacing) / 7)
+        let columns = max(1, Int((size.width + spacing) / (cell + spacing)))
+        let trimmed = ContributionGrid(weeks: Array(grid.weeks.suffix(columns)))
+        return ContributionGridView(
+            grid: trimmed, baseColor: baseColor,
+            scrollable: false, showMonthLabels: showMonthLabels,
+            cellSize: cell, spacing: spacing, highlightedDate: highlightedDate
+        )
     }
 
     private var gridStack: some View {

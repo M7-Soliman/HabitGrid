@@ -33,10 +33,8 @@ struct HabitProvider: AppIntentTimelineProvider {
         return Timeline(entries: [entry], policy: .after(refresh))
     }
 
-    // How many week-columns fit each widget size.
-    private func weeks(for family: WidgetFamily) -> Int {
-        family == .systemMedium ? 20 : 12
-    }
+    // Build a generous history; the fill-mode grid trims to however many columns fit.
+    private func weeks(for family: WidgetFamily) -> Int { 30 }
 
     @MainActor
     private func makeEntry(for configuration: SelectHabitIntent, family: WidgetFamily) -> HabitEntry {
@@ -94,15 +92,15 @@ struct HabitWidgetView: View {
                         .foregroundStyle(Color.fg1)
                 }
             }
+            // Fill the remaining space edge-to-edge with month labels for context.
             ContributionGridView(
                 grid: entry.grid,
                 baseColor: Color(hex: entry.colorHex),
                 scrollable: false,
-                showMonthLabels: isMedium,
-                cellSize: isMedium ? 11 : 9,    // smaller cells on the small widget so 7 rows fit
-                spacing: isMedium ? 3 : 2
+                showMonthLabels: true,
+                spacing: isMedium ? 3 : 2.5,
+                fill: true
             )
-            Spacer(minLength: 0)
         }
         .padding(12)   // our own margin (system margins are disabled below)
         .containerBackground(Color.appBg, for: .widget)
