@@ -39,22 +39,28 @@ struct ContributionGridView: View {
     // One day square. `nil` = a day outside the range (faint empty cell). Today is ringed.
     private func squareView(for day: GridCell?) -> some View {
         let isToday = day.map { Calendar.current.isDate($0.date, inSameDayAs: today) } ?? false
-        return RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-            .fill(fillColor(for: day))
-            .frame(width: cellSize, height: cellSize)
-            .overlay(
+        let level = day?.level ?? 0
+        return ZStack {
+            // Empty backing cell — a semantic gray that adapts to light/dark.
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                .fill(Color(.systemGray5))
+            // Habit color on top, stronger at higher levels. Compositing OVER the gray
+            // (rather than over the dark card) keeps low levels readable in both modes.
+            if level > 0 {
                 RoundedRectangle(cornerRadius: 2.5, style: .continuous)
-                    .strokeBorder(isToday ? Color.primary.opacity(0.55) : .clear, lineWidth: 1.2)
-            )
+                    .fill(baseColor.opacity(intensity(forLevel: level)))
+            }
+        }
+        .frame(width: cellSize, height: cellSize)
+        .overlay(
+            RoundedRectangle(cornerRadius: 2.5, style: .continuous)
+                .strokeBorder(isToday ? Color.primary.opacity(0.6) : .clear, lineWidth: 1.2)
+        )
     }
 
-    // Empty/level 0 -> faint gray. Levels 1–4 ramp the habit color from light to full.
-    private func fillColor(for day: GridCell?) -> Color {
-        guard let day, day.level > 0 else {
-            return Color(.systemGray5)
-        }
-        let opacityByLevel = [0.0, 0.4, 0.6, 0.8, 1.0]   // index by level 1...4
-        return baseColor.opacity(opacityByLevel[min(day.level, 4)])
+    // How strongly to tint each level (1...4) of the habit color.
+    private func intensity(forLevel level: Int) -> Double {
+        [0.0, 0.35, 0.55, 0.78, 1.0][min(level, 4)]
     }
 
     // --- Month labels across the top, aligned to the columns of each month. ---

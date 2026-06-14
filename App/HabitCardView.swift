@@ -22,6 +22,11 @@ struct HabitCardView: View {
                 .fill(Color(.secondarySystemGroupedBackground))
                 .shadow(color: .black.opacity(0.06), radius: 6, y: 2)
         )
+        // Hairline border for definition (mostly noticeable in dark mode).
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 0.5)
+        )
     }
 
     private var color: Color { Color(hex: habit.colorHex) }
