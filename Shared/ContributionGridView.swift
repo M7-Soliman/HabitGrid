@@ -11,8 +11,7 @@ struct ContributionGridView: View {
     var showMonthLabels: Bool = true
     var cellSize: CGFloat = 11     // smaller in widgets so 7 rows fit
     var spacing: CGFloat = 3
-
-    private let today = Calendar.current.startOfDay(for: Date())
+    var highlightedDate: Date = Calendar.current.startOfDay(for: Date())   // ringed cell (default: today)
 
     var body: some View {
         if scrollable {
@@ -49,7 +48,7 @@ struct ContributionGridView: View {
 
     // One day square. `nil` = a day outside the range (faint empty cell). Today is ringed.
     private func squareView(for day: GridCell?) -> some View {
-        let isToday = day.map { Calendar.current.isDate($0.date, inSameDayAs: today) } ?? false
+        let isToday = day.map { Calendar.current.isDate($0.date, inSameDayAs: highlightedDate) } ?? false
         let level = day?.level ?? 0
         return ZStack {
             // Empty backing cell — adaptive token (calm, near-monochrome).

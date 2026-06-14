@@ -35,12 +35,14 @@ struct HabitDetailView: View {
         }
     }
 
-    // Share of every day since the habit was created that met the daily goal.
+    // Share of every day since the habit was FIRST LOGGED that met the daily goal.
     private var consistencyPercent: Int {
         let calendar = Calendar.current
-        let start = calendar.startOfDay(for: habit.createdAt)
+        guard let firstLogged = habit.completionsList.map({ calendar.startOfDay(for: $0.date) }).min() else {
+            return 0   // never logged
+        }
         let today = calendar.startOfDay(for: Date())
-        let days = (calendar.dateComponents([.day], from: start, to: today).day ?? 0) + 1
+        let days = (calendar.dateComponents([.day], from: firstLogged, to: today).day ?? 0) + 1
         let rate = Streaks.metRate(counts: dailyCounts, lastDays: max(days, 1), metThreshold: habit.dailyTarget)
         return Int((rate * 100).rounded())
     }

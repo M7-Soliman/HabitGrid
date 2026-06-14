@@ -8,13 +8,14 @@ import HabitCore
 struct HabitCardView: View {
     @Environment(\.modelContext) private var context
     let habit: HabitModel
+    var date: Date = Calendar.current.startOfDay(for: Date())   // the day being viewed/logged
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             header
             HStack(alignment: .center, spacing: 16) {
                 streakBadge
-                ContributionGridView(grid: grid, baseColor: color)
+                ContributionGridView(grid: grid, baseColor: color, highlightedDate: date)
             }
         }
         .padding(16)
@@ -41,8 +42,8 @@ struct HabitCardView: View {
                 .font(.system(size: 15, weight: .medium))
                 .foregroundStyle(Color.fg1)
             Spacer()
-            // "−" to remove one of today's logs; only shown when there's something to remove.
-            if todayCount > 0 {
+            // "−" to remove one of the day's logs; only shown when there's something to remove.
+            if count > 0 {
                 Image(systemName: "minus")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Color.fg3)
@@ -52,7 +53,7 @@ struct HabitCardView: View {
                     .highPriorityGesture(TapGesture().onEnded { Haptics.tap(); decrement() })
             }
             LogButton(
-                count: todayCount,
+                count: count,
                 target: habit.dailyTarget,
                 color: color,
                 onIncrement: increment
@@ -94,28 +95,34 @@ struct HabitCardView: View {
         ContributionGridBuilder.build(endingOn: Date(), weeks: 18, counts: dailyCounts, target: habit.dailyTarget)
     }
 
+    // Always the current streak (consecutive days ending today), regardless of viewed day.
     private var currentStreak: Int {
         Streaks.current(counts: dailyCounts, metThreshold: habit.dailyTarget)
     }
 
-    // How many times the habit was logged today.
-    private var todayCount: Int {
+    // How many times the habit was logged on the viewed day.
+    private var count: Int {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
+        return habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: date) }.count
     }
 
-    // +1: log another occurrence today.
+    // The timestamp to store: "now" if logging today, else noon of the chosen day.
+    private var logTimestamp: Date {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return Date() }
+        return calendar.date(bySettingHour: 12, minute: 0, second: 0, of: date) ?? date
+    }
+
+    // +1: log another occurrence on the viewed day.
     private func increment() {
-        context.insert(CompletionModel(date: Date(), habit: habit))
+        context.insert(CompletionModel(date: logTimestamp, habit: habit))
         WidgetCenter.shared.reloadAllTimelines()   // refresh the widget right away
     }
 
-    // −1: remove one of today's occurrences (if any).
+    // −1: remove one of the viewed day's occurrences (if any).
     private func decrement() {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        if let existing = habit.completionsList.first(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
+        if let existing = habit.completionsList.first(where: { calendar.isDate($0.date, inSameDayAs: date) }) {
             context.delete(existing)
             WidgetCenter.shared.reloadAllTimelines()
         }

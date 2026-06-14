@@ -13,6 +13,8 @@ struct TodayView: View {
     @State private var showingAdd = false
     @State private var editingHabit: HabitModel?
     @State private var selectedHabit: HabitModel?   // tapped card -> detail screen
+    @State private var selectedDate = Calendar.current.startOfDay(for: Date())   // day being logged
+    @State private var showDatePicker = false
 
     var body: some View {
         NavigationStack {
@@ -43,10 +45,37 @@ struct TodayView: View {
             }
             .sheet(isPresented: $showingAdd) { HabitEditorView(habit: nil) }
             .sheet(item: $editingHabit) { habit in HabitEditorView(habit: habit) }
+            .sheet(isPresented: $showDatePicker) { datePickerSheet }
         }
         .tint(Color.brand)
         .onAppear(perform: seedIfNeeded)
         .onOpenURL(perform: open)
+    }
+
+    // Calendar sheet to jump to any past day (no future).
+    private var datePickerSheet: some View {
+        NavigationStack {
+            DatePicker(
+                "Day",
+                selection: $selectedDate,
+                in: ...Calendar.current.startOfDay(for: Date()),
+                displayedComponents: .date
+            )
+            .datePickerStyle(.graphical)
+            .tint(Color.brand)
+            .padding()
+            .navigationTitle("Pick a day")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        selectedDate = Calendar.current.startOfDay(for: selectedDate)
+                        showDatePicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
     }
 
     // Handle habitgrid://habit/<uuid> from the widget — open that habit's detail screen.
@@ -60,18 +89,15 @@ struct TodayView: View {
         DispatchQueue.main.async { selectedHabit = habit }
     }
 
-    // Progress ring + "N of M done today" + date.
+    // Progress ring (for the selected day) + done count + a day navigator.
     private var summaryHeader: some View {
         HStack(spacing: 16) {
-            SummaryRing(done: doneTodayCount, total: habits.count)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(allDone ? "All done today" : "\(doneTodayCount) of \(habits.count) done")
+            SummaryRing(done: doneCount, total: habits.count)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(allDone ? "All done" : "\(doneCount) of \(habits.count) done")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(Color.fg1)
-                Text(dateString.uppercased())
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .tracking(0.5)
-                    .foregroundStyle(Color.fg4)
+                dateNavigator
             }
             Spacer()
         }
@@ -80,10 +106,34 @@ struct TodayView: View {
         .padding(.bottom, 16)
     }
 
+    // ‹  WED, JUN 11  ›  + a "Today" jump when viewing a past day.
+    private var dateNavigator: some View {
+        HStack(spacing: 8) {
+            Button { shiftDay(-1) } label: { Image(systemName: "chevron.left") }
+            Button { showDatePicker = true } label: {
+                Text(dayLabel)
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .tracking(0.5)
+            }
+            Button { shiftDay(1) } label: { Image(systemName: "chevron.right") }
+                .disabled(isViewingToday)
+                .opacity(isViewingToday ? 0.35 : 1)
+            if !isViewingToday {
+                Button("TODAY") { selectedDate = Calendar.current.startOfDay(for: Date()) }
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Color.brand)
+                    .padding(.leading, 2)
+            }
+        }
+        .font(.system(size: 11))
+        .foregroundStyle(Color.fg4)
+        .buttonStyle(.plain)
+    }
+
     private var habitList: some View {
         List {
             ForEach(habits) { habit in
-                HabitCardView(habit: habit)
+                HabitCardView(habit: habit, date: selectedDate)
                     .contentShape(Rectangle())
                     .onTapGesture { selectedHabit = habit }
                     .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -136,21 +186,35 @@ struct TodayView: View {
 
     // MARK: - Derived
 
-    private var doneTodayCount: Int {
+    // Habits that met their goal on the selected day.
+    private var doneCount: Int {
         let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
         return habits.filter { habit in
-            let todayCount = habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: today) }.count
-            return todayCount >= max(habit.dailyTarget, 1)   // "done" = met the goal
+            let n = habit.completionsList.filter { calendar.isDate($0.date, inSameDayAs: selectedDate) }.count
+            return n >= max(habit.dailyTarget, 1)
         }.count
     }
 
-    private var allDone: Bool { !habits.isEmpty && doneTodayCount == habits.count }
+    private var allDone: Bool { !habits.isEmpty && doneCount == habits.count }
 
-    private var dateString: String {
+    private var isViewingToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+
+    // "TODAY" / "YESTERDAY" / "WED, JUN 11"
+    private var dayLabel: String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(selectedDate) { return "TODAY" }
+        if calendar.isDateInYesterday(selectedDate) { return "YESTERDAY" }
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
-        return formatter.string(from: Date())
+        formatter.dateFormat = "EEE, MMM d"
+        return formatter.string(from: selectedDate).uppercased()
+    }
+
+    // Move the selected day by ±1, never past today.
+    private func shiftDay(_ delta: Int) {
+        let calendar = Calendar.current
+        guard let moved = calendar.date(byAdding: .day, value: delta, to: selectedDate) else { return }
+        let today = calendar.startOfDay(for: Date())
+        selectedDate = min(calendar.startOfDay(for: moved), today)
     }
 
     private func seedIfNeeded() {
