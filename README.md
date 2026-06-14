@@ -1,10 +1,10 @@
 # HabitGrid
 
-A personal iOS habit tracker I built **for myself** — to see my daily habits as a
+A personal iOS habit tracker I built for myself to see my daily habits as a
 GitHub-style contribution grid, and to learn native iOS development (Swift, SwiftUI,
 SwiftData, WidgetKit) properly along the way.
 
-Everything lives on-device. No accounts, no servers, no analytics — just my habits and a
+Everything lives on-device. No accounts, no servers, no analytics, just my habits and a
 home-screen widget that keeps the grid in front of me.
 
 <p align="center">
