@@ -68,19 +68,3 @@ Run the logic tests:
 ```sh
 swift test --package-path Packages/HabitCore
 ```
-
-Everything works free in the **Simulator**. Running the widget on a real iPhone, and turning on
-**iCloud sync**, need the paid Apple Developer Program — steps in
-[`docs/ENABLE_ICLOUD.md`](docs/ENABLE_ICLOUD.md).
-
-## Why I built it
-
-I wanted a habit tracker that felt like the GitHub graph — the visual that actually motivates
-me — and I wanted an excuse to learn iOS from the ground up rather than reach for a web stack.
-So this is equal parts a tool I use every day and a project I learned Swift, SwiftUI, SwiftData,
-and WidgetKit on.
-
-## Status
-
-Personal project, actively used. Possible next steps: Apple Health auto-import (a logged
-workout → auto-marks "Gym"), a lock-screen widget, and flipping on iCloud sync.
